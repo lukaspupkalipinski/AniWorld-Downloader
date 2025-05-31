@@ -6,6 +6,8 @@ import subprocess
 import sys
 import os
 import re
+import time
+import random
 
 import requests
 from tqdm import tqdm
@@ -15,7 +17,8 @@ from aniworld.config import (
     DEFAULT_REQUEST_TIMEOUT,
     MPV_DIRECTORY,
     ANIWORLD_TO,
-    MPV_SCRIPTS_DIRECTORY
+    MPV_SCRIPTS_DIRECTORY,
+    ANIWORLD_HEADERS
 )
 
 
@@ -237,8 +240,12 @@ def download_file(url: str, path: str):
 
 
 def get_season_episode_count(slug) -> dict:
-    base_url = f"{ANIWORLD_TO}/anime/stream/{slug}/"
-    response = requests.get(base_url, timeout=DEFAULT_REQUEST_TIMEOUT)
+
+    base_url = f"{ANIWORLD_TO}/anime/stream/{slug}"
+
+    time.sleep(random.uniform(1, 5))
+    session = requests.Session()
+    response = session.get(base_url, headers=ANIWORLD_HEADERS, timeout=DEFAULT_REQUEST_TIMEOUT)
     soup = BeautifulSoup(response.content, 'html.parser')
 
     season_meta = soup.find('meta', itemprop='numberOfSeasons')
@@ -248,7 +255,8 @@ def get_season_episode_count(slug) -> dict:
 
     for season in range(1, number_of_seasons + 1):
         season_url = f"{base_url}staffel-{season}"
-        response = requests.get(season_url, timeout=DEFAULT_REQUEST_TIMEOUT)
+        time.sleep(random.uniform(1, 5))
+        response = session.get(season_url, headers=ANIWORLD_HEADERS, timeout=DEFAULT_REQUEST_TIMEOUT)
         soup = BeautifulSoup(response.content, 'html.parser')
 
         episode_links = soup.find_all('a', href=True)
