@@ -4,13 +4,11 @@ import webbrowser
 from urllib.parse import quote
 import logging
 import re
-
 import curses
 import requests
 
 from aniworld.ascii_art import display_ascii_art
 from aniworld.config import DEFAULT_REQUEST_TIMEOUT, ANIWORLD_TO
-
 
 def search_anime(keyword: str = None, only_return: bool = False) -> str:
     if not only_return:

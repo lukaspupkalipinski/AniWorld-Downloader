@@ -7,7 +7,7 @@ import requests.models
 from bs4 import BeautifulSoup
 
 from aniworld.aniskip import get_mal_id_from_title
-from aniworld.config import DEFAULT_REQUEST_TIMEOUT, RANDOM_USER_AGENT, ANIWORLD_TO
+from aniworld.config import DEFAULT_REQUEST_TIMEOUT, RANDOM_USER_AGENT, ANIWORLD_TO, session
 from aniworld.parser import arguments
 from aniworld.common import get_season_episode_count, get_movie_episode_count
 
@@ -87,7 +87,7 @@ class Anime:
         if not self.slug:
             raise ValueError("Slug of Anime is None.")
 
-        self.html = html or requests.get(
+        self.html = html or session.get(
             f"{ANIWORLD_TO}/anime/stream/{self.slug}",
             timeout=DEFAULT_REQUEST_TIMEOUT
         )
@@ -114,7 +114,7 @@ class Anime:
 
     def _fetch_description_english(self):
         anime_id = get_mal_id_from_title(self.title, 1)
-        response = requests.get(
+        response = session.get(
             f"https://myanimelist.net/anime/{anime_id}",
             timeout=DEFAULT_REQUEST_TIMEOUT
         )
@@ -478,7 +478,7 @@ class Episode:
         if not self.redirect_link:
             return None
 
-        self.embeded_link = requests.get(
+        self.embeded_link = session.get(
             self.redirect_link, timeout=DEFAULT_REQUEST_TIMEOUT,
             headers={'User-Agent': RANDOM_USER_AGENT}).url
         return self.embeded_link
@@ -510,6 +510,9 @@ class Episode:
         if not self.embeded_link:
             self.get_embeded_link()
 
+        if not self.embeded_link:
+            raise NoMachingLanguage()
+
         self.direct_link = self._get_direct_link_from_provider()
         return self.direct_link
 
@@ -525,7 +528,7 @@ class Episode:
             self.season = self.season or self._get_season_from_link()
             self.episode = self.episode or self._get_episode_from_link()
 
-        self.html = requests.get(self.link, timeout=DEFAULT_REQUEST_TIMEOUT)
+        self.html = session.get(self.link, timeout=DEFAULT_REQUEST_TIMEOUT)
         self.anime_title = get_anime_title_from_html(html=self.html)
         self.title_german, self.title_english = self._get_episode_title_from_html()
         self.language = self._get_available_language_from_html()
@@ -577,6 +580,8 @@ def get_anime_title_from_html(html: requests.models.Response):
 
     return ""
 
+class NoMachingLanguage(Exception):
+    pass
 
 if __name__ == "__main__":
     pass

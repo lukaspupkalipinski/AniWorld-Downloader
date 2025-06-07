@@ -10,6 +10,9 @@ from urllib3.exceptions import InsecureRequestWarning
 import urllib3
 import requests
 from fake_useragent import UserAgent
+import warnings
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 #########################################################################################
@@ -199,6 +202,20 @@ SYNCPLAY_PATH = syncplay_path
 YTDLP_PATH = shutil.which("yt-dlp")  # already in pip deps
 
 #########################################################################################
+
+session = requests.Session()
+
+# Configure retries with backoff
+retries = Retry(
+    total=5,  # Number of retries
+    backoff_factor=1,  # Delay multiplier (1s, 2s, 4s, ...)
+    status_forcelist=[500, 502, 503, 504],  # Retry for specific HTTP errors
+    allowed_methods=["GET"]
+)
+
+adapter = HTTPAdapter(max_retries=retries)
+session.mount("https://", adapter)
+
 
 if __name__ == '__main__':
     pass

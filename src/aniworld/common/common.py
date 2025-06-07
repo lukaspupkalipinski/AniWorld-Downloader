@@ -6,8 +6,6 @@ import subprocess
 import sys
 import os
 import re
-import time
-import random
 
 import requests
 from tqdm import tqdm
@@ -18,8 +16,10 @@ from aniworld.config import (
     MPV_DIRECTORY,
     ANIWORLD_TO,
     MPV_SCRIPTS_DIRECTORY,
-    ANIWORLD_HEADERS
+    ANIWORLD_HEADERS,
+    session
 )
+
 
 
 def check_avx2_support() -> bool:
@@ -42,7 +42,7 @@ def get_github_release(repo: str) -> dict:
     api_url = f"https://api.github.com/repos/{repo}/releases/latest"
 
     try:
-        response = requests.get(api_url, timeout=DEFAULT_REQUEST_TIMEOUT)
+        response = session.get(api_url, timeout=DEFAULT_REQUEST_TIMEOUT)
         response.raise_for_status()
         release_data = response.json()
         assets = release_data.get('assets', [])
@@ -225,7 +225,7 @@ def download_syncplay(dep_path: str = None, appdata_path: str = None, update: bo
 
 def download_file(url: str, path: str):
     try:
-        response = requests.get(
+        response = session.get(
             url, stream=True, allow_redirects=True, timeout=DEFAULT_REQUEST_TIMEOUT)
         total_size = int(response.headers.get('content-length', 0))
         block_size = 1024
@@ -243,8 +243,6 @@ def get_season_episode_count(slug) -> dict:
 
     base_url = f"{ANIWORLD_TO}/anime/stream/{slug}"
 
-    time.sleep(random.uniform(1, 5))
-    session = requests.Session()
     response = session.get(base_url, headers=ANIWORLD_HEADERS, timeout=DEFAULT_REQUEST_TIMEOUT)
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -254,8 +252,7 @@ def get_season_episode_count(slug) -> dict:
     episode_counts = {}
 
     for season in range(1, number_of_seasons + 1):
-        season_url = f"{base_url}staffel-{season}"
-        time.sleep(random.uniform(1, 5))
+        season_url = f"{base_url}/staffel-{season}"
         response = session.get(season_url, headers=ANIWORLD_HEADERS, timeout=DEFAULT_REQUEST_TIMEOUT)
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -273,7 +270,7 @@ def get_season_episode_count(slug) -> dict:
 
 def get_movie_episode_count(slug) -> int:
     movie_page_url = f"{ANIWORLD_TO}/anime/stream/{slug}/filme"
-    response = requests.get(
+    response = session.get(
         movie_page_url, timeout=DEFAULT_REQUEST_TIMEOUT)
 
     parsed_html = BeautifulSoup(response.content, 'html.parser')

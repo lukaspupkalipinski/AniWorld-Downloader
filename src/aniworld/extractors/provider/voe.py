@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from aniworld import config
+from aniworld.config import session
 
 
 def shift_letters(input_str):
@@ -50,7 +51,7 @@ def extract_voe_from_script(html):
 
 def get_direct_link_from_voe(embeded_voe_link: str) -> str:
     try:
-        response = requests.get(
+        response = session.get(
             embeded_voe_link,
             headers={'User-Agent': config.RANDOM_USER_AGENT},
             timeout=config.DEFAULT_REQUEST_TIMEOUT
@@ -65,17 +66,8 @@ def get_direct_link_from_voe(embeded_voe_link: str) -> str:
         config.PROVIDER_HEADERS["VOE"].append(
             f'Referer: "{parts[0]}//{parts[2]}/"')
 
-        try:
-            with urlopen(
-                Request(
-                    redirect_url,
-                    headers={'User-Agent': config.RANDOM_USER_AGENT}
-                ),
-                timeout=config.DEFAULT_REQUEST_TIMEOUT
-            ) as resp:
-                html = resp.read().decode()
-        except (HTTPError, URLError, TimeoutError) as err:
-            raise ValueError(f"Redirect failed: {err}") from err
+        response = session.get(redirect_url,headers={'User-Agent': config.RANDOM_USER_AGENT})
+        html = response.content
 
         extracted = extract_voe_from_script(html)
         if extracted:
